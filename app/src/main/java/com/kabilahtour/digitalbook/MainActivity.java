@@ -5,12 +5,13 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
+import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
-import android.view.WindowInsets;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.SslErrorHandler;
@@ -21,14 +22,12 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.net.http.SslError;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.graphics.Typeface;
 
 public class MainActivity extends Activity {
 
@@ -49,78 +48,41 @@ public class MainActivity extends Activity {
         /*
          * Warna area sistem Android.
          */
-        getWindow().setStatusBarColor(Color.rgb(16, 18, 23));
-        getWindow().setNavigationBarColor(Color.rgb(16, 18, 23));
+        getWindow().setStatusBarColor(
+                Color.rgb(16, 18, 23)
+        );
+
+        getWindow().setNavigationBarColor(
+                Color.rgb(16, 18, 23)
+        );
 
         buildUi();
-        configureSystemBars();
+
+        /*
+         * Memberikan ruang kecil agar konten website
+         * tidak terlalu menempel pada area layar.
+         */
+        addSafeSpacing();
+
         configureWebView();
+
         loadHome();
-    }
-
-    /**
-     * Mengatur safe area agar konten tidak menempel
-     * pada status bar dan navigation bar.
-     */
-    private void configureSystemBars() {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setStatusBarColor(Color.rgb(16, 18, 23));
-            getWindow().setNavigationBarColor(Color.rgb(16, 18, 23));
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            /*
-             * Background gelap, jadi icon status bar tetap putih.
-             */
-            getWindow().getDecorView().setSystemUiVisibility(0);
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-
-            root.setOnApplyWindowInsetsListener((v, insets) -> {
-
-                WindowInsets.Type.InsetsType systemBars =
-                        WindowInsets.Type.systemBars();
-
-                android.graphics.Insets bars =
-                        insets.getInsets(systemBars);
-
-                /*
-                 * Memberikan ruang:
-                 * atas    = status bar
-                 * bawah   = navigation bar
-                 */
-                root.setPadding(
-                        0,
-                        bars.top,
-                        0,
-                        bars.bottom
-                );
-
-                return insets;
-            });
-
-            root.post(() -> root.requestApplyInsets());
-
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-
-            root.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            );
-        }
     }
 
     private void buildUi() {
 
         root = new FrameLayout(this);
-        root.setBackgroundColor(Color.rgb(16, 18, 23));
+        root.setBackgroundColor(
+                Color.rgb(16, 18, 23)
+        );
 
         /*
          * WebView utama.
          */
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(16, 18, 23));
+        webView.setBackgroundColor(
+                Color.rgb(16, 18, 23)
+        );
 
         FrameLayout.LayoutParams webViewLp =
                 new FrameLayout.LayoutParams(
@@ -128,7 +90,10 @@ public class MainActivity extends Activity {
                         FrameLayout.LayoutParams.MATCH_PARENT
                 );
 
-        root.addView(webView, webViewLp);
+        root.addView(
+                webView,
+                webViewLp
+        );
 
         /*
          * Loading indicator.
@@ -144,14 +109,22 @@ public class MainActivity extends Activity {
 
         progressLp.gravity = Gravity.CENTER;
 
-        root.addView(progress, progressLp);
+        root.addView(
+                progress,
+                progressLp
+        );
 
         /*
-         * Halaman ketika internet bermasalah.
+         * Tampilan ketika koneksi gagal.
          */
         offlineView = new LinearLayout(this);
-        offlineView.setOrientation(LinearLayout.VERTICAL);
-        offlineView.setGravity(Gravity.CENTER);
+        offlineView.setOrientation(
+                LinearLayout.VERTICAL
+        );
+
+        offlineView.setGravity(
+                Gravity.CENTER
+        );
 
         offlineView.setPadding(
                 48,
@@ -164,10 +137,12 @@ public class MainActivity extends Activity {
                 Color.rgb(16, 18, 23)
         );
 
-        offlineView.setVisibility(View.GONE);
+        offlineView.setVisibility(
+                View.GONE
+        );
 
         /*
-         * Judul offline.
+         * Judul.
          */
         TextView title = new TextView(this);
 
@@ -175,16 +150,23 @@ public class MainActivity extends Activity {
                 "Koneksi internet diperlukan"
         );
 
-        title.setTextColor(Color.WHITE);
+        title.setTextColor(
+                Color.WHITE
+        );
+
         title.setTextSize(20);
+
         title.setTypeface(
                 Typeface.DEFAULT,
                 Typeface.BOLD
         );
-        title.setGravity(Gravity.CENTER);
+
+        title.setGravity(
+                Gravity.CENTER
+        );
 
         /*
-         * Pesan offline.
+         * Pesan.
          */
         TextView message = new TextView(this);
 
@@ -192,9 +174,15 @@ public class MainActivity extends Activity {
                 "Digital Book Kabilah mengambil konten terbaru langsung dari website."
         );
 
-        message.setTextColor(Color.LTGRAY);
+        message.setTextColor(
+                Color.LTGRAY
+        );
+
         message.setTextSize(14);
-        message.setGravity(Gravity.CENTER);
+
+        message.setGravity(
+                Gravity.CENTER
+        );
 
         message.setPadding(
                 0,
@@ -204,11 +192,13 @@ public class MainActivity extends Activity {
         );
 
         /*
-         * Tombol retry.
+         * Tombol coba lagi.
          */
         Button retry = new Button(this);
 
-        retry.setText("Coba Lagi");
+        retry.setText(
+                "Coba Lagi"
+        );
 
         retry.setTextColor(
                 Color.rgb(16, 18, 23)
@@ -223,7 +213,7 @@ public class MainActivity extends Activity {
         );
 
         /*
-         * Masukkan komponen ke offline view.
+         * Masukkan komponen.
          */
         offlineView.addView(
                 title,
@@ -263,27 +253,57 @@ public class MainActivity extends Activity {
         setContentView(root);
     }
 
+    /**
+     * Safe spacing sederhana.
+     *
+     * Tidak menggunakan WindowInsets sehingga kompatibel
+     * dengan konfigurasi Android project saat ini.
+     */
+    private void addSafeSpacing() {
+
+        float density =
+                getResources()
+                        .getDisplayMetrics()
+                        .density;
+
+        int spacing =
+                (int) (6 * density);
+
+        webView.setPadding(
+                0,
+                spacing,
+                0,
+                spacing
+        );
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private void configureWebView() {
 
-        WebSettings settings = webView.getSettings();
+        WebSettings settings =
+                webView.getSettings();
 
         settings.setJavaScriptEnabled(true);
+
         settings.setDomStorageEnabled(true);
+
         settings.setDatabaseEnabled(true);
 
         /*
-         * Audio tetap mengikuti aturan browser Android.
+         * Audio mengikuti gesture pengguna.
          */
         settings.setMediaPlaybackRequiresUserGesture(true);
 
         settings.setLoadsImagesAutomatically(true);
 
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
+
         settings.setSupportMultipleWindows(false);
 
         settings.setBuiltInZoomControls(false);
+
         settings.setDisplayZoomControls(false);
+
         settings.setSupportZoom(false);
 
         settings.setCacheMode(
@@ -295,6 +315,7 @@ public class MainActivity extends Activity {
         );
 
         settings.setAllowFileAccess(false);
+
         settings.setAllowContentAccess(true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -309,16 +330,19 @@ public class MainActivity extends Activity {
         /*
          * Cookie.
          */
-        CookieManager.getInstance().setAcceptCookie(true);
+        CookieManager
+                .getInstance()
+                .setAcceptCookie(true);
 
-        CookieManager.getInstance()
+        CookieManager
+                .getInstance()
                 .setAcceptThirdPartyCookies(
                         webView,
                         true
                 );
 
         /*
-         * WebView client.
+         * WebViewClient.
          */
         webView.setWebViewClient(
                 new WebViewClient() {
@@ -437,7 +461,8 @@ public class MainActivity extends Activity {
                     ) {
 
                         /*
-                         * Jangan menerima sertifikat SSL bermasalah.
+                         * Sertifikat SSL yang bermasalah
+                         * tidak diterima.
                          */
                         handler.cancel();
 
@@ -454,12 +479,15 @@ public class MainActivity extends Activity {
                 }
         );
 
+        /*
+         * WebChromeClient.
+         */
         webView.setWebChromeClient(
                 new WebChromeClient()
         );
 
         /*
-         * Download / file.
+         * Download listener.
          */
         webView.setDownloadListener(
                 (
@@ -496,9 +524,11 @@ public class MainActivity extends Activity {
             String url
     ) {
 
-        Uri uri = Uri.parse(url);
+        Uri uri =
+                Uri.parse(url);
 
-        String scheme = uri.getScheme();
+        String scheme =
+                uri.getScheme();
 
         if (scheme == null) {
             return false;
@@ -512,7 +542,8 @@ public class MainActivity extends Activity {
                         || scheme.equalsIgnoreCase("https")
         ) {
 
-            String host = uri.getHost();
+            String host =
+                    uri.getHost();
 
             /*
              * WhatsApp.
@@ -521,7 +552,9 @@ public class MainActivity extends Activity {
                     host != null
                             && (
                             host.equalsIgnoreCase("wa.me")
-                                    || host.equalsIgnoreCase("api.whatsapp.com")
+                                    || host.equalsIgnoreCase(
+                                    "api.whatsapp.com"
+                            )
                     )
             ) {
 
@@ -547,7 +580,9 @@ public class MainActivity extends Activity {
              */
             if (
                     host != null
-                            && host.equalsIgnoreCase("maps.google.com")
+                            && host.equalsIgnoreCase(
+                            "maps.google.com"
+                    )
             ) {
 
                 try {
@@ -568,13 +603,14 @@ public class MainActivity extends Activity {
             }
 
             /*
-             * Website tetap dibuka di WebView.
+             * URL lainnya tetap berada
+             * di dalam WebView.
              */
             return false;
         }
 
         /*
-         * Scheme khusus seperti tel:, mailto:, whatsapp:, dll.
+         * tel:, mailto:, whatsapp:, dll.
          */
         try {
 
@@ -617,7 +653,10 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
 
-        if (webView != null && webView.canGoBack()) {
+        if (
+                webView != null
+                        && webView.canGoBack()
+        ) {
 
             webView.goBack();
 
