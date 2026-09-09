@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.view.WindowInsets;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.SslErrorHandler;
@@ -59,10 +60,11 @@ public class MainActivity extends Activity {
         buildUi();
 
         /*
-         * Memberikan ruang kecil agar konten website
-         * tidak terlalu menempel pada area layar.
+         * Menangani edge-to-edge Android 15/16 dengan benar.
+         * Konten WebView diberi ruang sesuai system bars,
+         * sehingga tidak tertutup status bar / navigation bar.
          */
-        addSafeSpacing();
+        applySystemBarInsets();
 
         configureWebView();
 
@@ -254,27 +256,44 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * Safe spacing sederhana.
+     * Menghindari konten WebView tertutup status bar dan
+     * navigation bar pada Android yang menggunakan edge-to-edge.
      *
-     * Tidak menggunakan WindowInsets sehingga kompatibel
-     * dengan konfigurasi Android project saat ini.
+     * Tidak mengubah ukuran website dan tidak mengubah source
+     * digital-book.kabilahtour.com.
      */
-    private void addSafeSpacing() {
+    private void applySystemBarInsets() {
 
-        float density =
-                getResources()
-                        .getDisplayMetrics()
-                        .density;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            return;
+        }
 
-        int spacing =
-                (int) (6 * density);
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            int top;
+            int bottom;
 
-        webView.setPadding(
-                0,
-                spacing,
-                0,
-                spacing
-        );
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                android.graphics.Insets systemBars =
+                        insets.getInsets(WindowInsets.Type.systemBars());
+
+                top = systemBars.top;
+                bottom = systemBars.bottom;
+            } else {
+                top = insets.getSystemWindowInsetTop();
+                bottom = insets.getSystemWindowInsetBottom();
+            }
+
+            v.setPadding(
+                    0,
+                    top,
+                    0,
+                    bottom
+            );
+
+            return insets;
+        });
+
+        root.post(() -> root.requestApplyInsets());
     }
 
     @SuppressLint("SetJavaScriptEnabled")
