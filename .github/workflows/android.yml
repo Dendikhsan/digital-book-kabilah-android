@@ -28,52 +28,71 @@ jobs:
         with:
           gradle-version: "9.6.1"
 
-      - name: Build Release AAB
+      - name: Prepare signing key
         env:
-          HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -e
 
-          if [ "$HAS_SIGNING" = "true" ]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > release-upload-key.jks
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > release-upload-key.jks
 
-            cat > /tmp/digitalbook-signing.gradle <<'GRADLE'
-          android {
-              signingConfigs {
-                  release {
-                      storeFile file(System.getProperty("user.dir") + "/release-upload-key.jks")
-                      storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
-                      keyAlias System.getenv("ANDROID_KEY_ALIAS")
-                      keyPassword System.getenv("ANDROID_KEY_PASSWORD")
-                  }
-              }
+          test -s release-upload-key.jks
 
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.release
-                  }
-              }
-          }
-          GRADLE
+          echo "Signing keystore prepared."
 
-            gradle --no-daemon -I /tmp/digitalbook-signing.gradle :app:bundleRelease
-          else
-            gradle --no-daemon :app:bundleRelease
-          fi
+      - name: Build Release AAB
+        run: |
+          set -e
 
-      - name: Upload AAB
+          gradle --no-daemon :app:bundleRelease
+
+      - name: Sign Release AAB
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -e
+
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+
+          test -f "$AAB"
+
+          jarsigner \
+            -verbose \
+            -sigalg SHA256withRSA \
+            -digestalg SHA-256 \
+            -keystore release-upload-key.jks \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -keypass "$ANDROID_KEY_PASSWORD" \
+            "$AAB" \
+            "$ANDROID_KEY_ALIAS"
+
+      - name: Verify Signed AAB
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -e
+
+          jarsigner \
+            -verify \
+            -verbose \
+            -certs \
+            -keystore release-upload-key.jks \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
-          name: digital-book-kabilah-aab
+          name: digital-book-kabilah-aab-final
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
       - name: Build Debug APK
         run: |
+          set -e
+
           gradle --no-daemon :app:assembleDebug
 
       - name: Upload Debug APK
