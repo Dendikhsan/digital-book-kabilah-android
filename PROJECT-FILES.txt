@@ -1,0 +1,8 @@
+PROJECT-FILES.txt
+README-ID.md
+app/build.gradle
+app/proguard-rules.pro
+app/src/main/AndroidManifest.xml
+build.gradle
+gradle.properties
+settings.gradle
