@@ -3,7 +3,8 @@ name: Build Digital Book Android
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -70,8 +71,8 @@ jobs:
           name: digital-book-kabilah-aab
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
-          
-       - name: Build Debug APK
+
+      - name: Build Debug APK
         run: |
           gradle --no-daemon :app:assembleDebug
 
